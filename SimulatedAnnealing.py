@@ -15,30 +15,42 @@ def SA(S, T, C, p, w, d, cooling_factor, neighborhood_length, calculate_solution
     S_current = S
     S_currentV = calculate_solution_value(S, p, w, d)
 
-    while(C > 0 or T > 0):
+    S_best = S_current[:]
+    S_bestV = S_currentV
+
+    while(C > 0 and T > 0):
         N = generate_neighborhood(S, neighborhood_length)
-        [S_Nv_best, S_N_best] = select_best_neighbor(N, calculate_solution_value, p, w, d)
         
-        delta = S_currentV - S_Nv_best
-        minus_delta_over_t = delta / T
-        prob_select_worst_solution = 1.0 / math.exp(minus_delta_over_t) # 1 / exp((S - S')/T)
-        print(prob_select_worst_solution)
+        for i in range(len(N)):
+            SN = N[i]
+            SNv = calculate_solution_value(SN, p, w, d)
 
-        # min < to find a solution with the minimum tardiness
-        if (S_Nv_best < S_currentV):
-            S_current = S_N_best
-            S_currentV = S_Nv_best
-            C = MAX_C
-        elif (random.random() >= prob_select_worst_solution):
-            S_current = S_N_best
-            S_currentV = S_Nv_best
-            C = C - 1
+            delta = (SNv - S_currentV)
+            minus_delta_over_t = delta / T
+            e = math.exp(-minus_delta_over_t)
+            prob_select_worst_solution = e
+            #math.tanh(minus_delta_over_t) * 0.5 + 0.5 # 1 / exp((S - S')/T)
+            print(prob_select_worst_solution)
+            # min < to find a solution with the minimum tardiness
+            if SNv > S_currentV:
+                S_current = SN[:]
+                S_currentV = SNv
+                #C = MAX_C
+            elif (prob_select_worst_solution > random.random()):
+                S_current = SN[:]
+                S_currentV = SNv
+                C = C - 1
 
-        print("C = ", C, "S v = ", S_currentV)
+            # save the best results
+            if S_currentV > S_bestV:
+                S_current = SN[:]
+                S_currentV = SNv
+
+            print(S_currentV, T)
 
         T = T - T * cooling_factor
 
-    return [S_currentV, S_current]
+    return [S_bestV, S_best]
         
 
 def select_best_neighbor(N, calculate_solution_value, p, w, d):
@@ -144,16 +156,19 @@ neighborhood_length = int(sys.argv[6])
 random.seed(randoness_seed)
 
 # initial solution is an order 1..instance length
-# S = [i for i in range(instance_length)]
-# SA(S, temperature, max_number_of_iterations_without_improved_solution, p, w, d, cooling_factor, neighborhood_length, objective_function_value_calculation, generate_neighborhood, select_best_neighbor)
+S = [i for i in range(instance_length)]
+print(objective_function_value_calculation(S, p, w, d))
+[best_solution, best_solution_schedule] = SA(S, temperature, max_number_of_iterations_without_improved_solution, p, w, d, cooling_factor, neighborhood_length, objective_function_value_calculation, generate_neighborhood, select_best_neighbor)
 
 # testing  [5, 2, 3, 1, 6, 4]
-solution = [4, 1, 2, 0, 5, 3]
-p = [3, 1, 1, 5, 1, 5]
-w = [3, 5, 1, 1, 4, 4]
-d = [1, 5, 3, 1, 3, 1]
-
-# output should print 70
-# print(objective_function_value_calculation(solution, p, w, d))
-[best_solution, best_solution_schedule] = SA(solution, temperature, max_number_of_iterations_without_improved_solution, p, w, d, cooling_factor, neighborhood_length, objective_function_value_calculation, generate_neighborhood, select_best_neighbor)
+#solution = [4, 1, 2, 0, 5, 3]
+#p = [3, 1, 1, 5, 1, 5]
+#w = [3, 5, 1, 1, 4, 4]
+#d = [1, 5, 3, 1, 3, 1]
+#
+## output should print 70
+## print(objective_function_value_calculation(solution, p, w, d))
+#[best_solution, best_solution_schedule] = SA(solution, temperature, max_number_of_iterations_without_improved_solution, p, w, d, cooling_factor, neighborhood_length, objective_function_value_calculation, generate_neighborhood, select_best_neighbor)
 print(best_solution)
+print(S)
+print(best_solution_schedule)
